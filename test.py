@@ -50,7 +50,7 @@ def generate_featured_image(text):
         json={
             "text_prompts": [
                 {
-                    "text": f'an object-only patterned background representing classic menswear style'
+                    "text": f'an object-only patterned background representing {meta_title}'
                 }
             ],
             "cfg_scale": 7,
