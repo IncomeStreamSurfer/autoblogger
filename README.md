@@ -10,7 +10,7 @@ This is an autoblogger that uses the ChatGPT API and Stable Diffusion API to cre
 
 [Example Website](https://giucas.com)
 
-**There are 5 different python scripts as of 31-07-2023**
+**There are 6 different python scripts as of 31-07-2023**
 
 ## 1. test.py
 
@@ -53,6 +53,13 @@ This script is specific for using after "createblogpost.py" and is used to uploa
 This script is specific for using after "createpage.py" and is used to upload that content as a page, if you want to change the parent page then you should change this line:
 
 parent_page_id = 10
+
+## shopify.py
+
+Get openai key
+Add and install shopify plugin
+Get password, API, blog_id
+
 
 
 
