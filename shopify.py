@@ -9,6 +9,8 @@ import concurrent.futures
 import threading
 import backoff
 import json
+from concurrent.futures import ThreadPoolExecutor
+
 from tenacity import (
     retry,
     stop_after_attempt,
@@ -27,17 +29,17 @@ def completion_with_backoff(**kwargs):
         print(f"Unexpected error: {e}")
         raise
 
-openai.api_key = 'YOUR_OPEN_AI_KEY'
+openai.api_key = 'YOUR_OPEN_AI_kEY'
 
 output_df = pd.DataFrame(columns=['URL Slug', 'Meta Title', 'Description', 'Blog Content', 'Featured Image'])
 output_lock = threading.Lock()
 
 # Shopify API credentials
-api_key = 'API_KEY'
-password = 'API_PASS'
-store_address = 'https://your_shopify_URL.myshopify.com/admin'
-blog_id = '89195905278'
-author = 'Piergiuseppe Castiello'
+api_key = 'YOUR_API_KEY'
+password = 'YOUR_SHOPIFY_PASSWORD'
+store_address = 'https://YOUR_STORE_ID.myshopify.com/admin'
+blog_id = 'YOUR_BLOG_ID'
+author = 'YOUR_AUTHOR_NAME'
 
 # Headers for the request
 headers = {
@@ -47,7 +49,12 @@ headers = {
 
 @retry(wait=wait_random_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(10), retry=retry_if_exception_type(requests.exceptions.RequestException))
 def create_shopify_post(payload):
-    response = requests.post(f'{store_address}/blogs/{blog_id}/articles.json', headers=headers, data=json.dumps(payload))
+    response = requests.post(
+    f'{store_address}/blogs/{blog_id}/articles.json',
+    headers=headers,
+    data=json.dumps(payload),
+    auth=(api_key, password)
+)
     if response.status_code == 201:
         print(f"Successfully created post with ID: {response.json()['article']['id']}")
     else:
@@ -61,15 +68,17 @@ def generate_blog_post(row):
         meta_title = row['Meta Title']
         description = row['Description of Page']
         conversation_outline = [
-            {
-                "role": "system",
-                "content": 'You are an essay-writing assistant who creates detailed outlines for essays. You always write at least 15 points for each outline.',
-            },
-            {
-                "role": "user",
-                "content": f"Create an outline for an essay about {meta_title} with at least 15 titles.",
-            },
-        ]
+    {
+        "role": "system",
+        "content": "You are an essay-writing assistant who creates detailed outlines for essays. You always write at least 15 points for each outline.",
+    },
+    {
+        "role": "user",
+        "content": f"Create an outline for an essay about {meta_title} with at least 15 titles.",
+    },
+]
+
+        print(f"Generating outline for URL Slug {url_slug}")
         response_outline = completion_with_backoff(
             model="gpt-4",
             messages=conversation_outline,
@@ -87,6 +96,7 @@ def generate_blog_post(row):
                 "content": f"Never leave an article incomplete, always write the entire thing. Make sure all content is relevant to the article. Use a fun tone of voice. Always include at least 5 internal links. Each heading from the essay outline should have at least 3 paragraphs and a table or list After writing the article, under H2 and H3 headers create an FAQ section, followed by FAQPage schema opening and closing with <script> tags.",
             },
         ]
+        print(f"Generating blog content for URL Slug {url_slug}")
         response = completion_with_backoff(
             model="gpt-4",
             messages=conversation,
@@ -94,14 +104,13 @@ def generate_blog_post(row):
             temperature=0.2
         )
         blog_content = response['choices'][0]['message']['content']
-        tqdm.write(f"Generated blog content for URL Slug {url_slug}")
-        tqdm.write(f"Generated featured image for URL Slug {url_slug}")
+        print(f"Generated blog content for URL Slug {url_slug}")
         result = {'URL Slug': url_slug, 'Meta Title': meta_title, 'Description': description, 'Blog Content': blog_content,}
         with output_lock:
             global output_df
             output_df = pd.concat([output_df, pd.DataFrame([result])], ignore_index=True)
             output_df.to_csv('output.csv', index=False)
-            tqdm.write(f"Saved blog post for URL Slug {url_slug} to output.csv")
+            print(f"Saved blog post for URL Slug {url_slug} to output.csv")
 
         # Prepare the payload for the Shopify API
         payload = {
@@ -114,22 +123,23 @@ def generate_blog_post(row):
         }
 
         # Send the POST request to the Shopify API
+        print(f"Creating Shopify post for URL Slug {url_slug}")
         create_shopify_post(payload)
 
     except Exception as e:
-        tqdm.write(f"Error generating blog post for URL Slug {url_slug}: {e}")
+        print(f"Error generating blog post for URL Slug {url_slug}: {e}")
         return None
 
 def main():
-    df = pd.DataFrame({
-        'URL Slug': ['url-slug-1', 'url-slug-2'],
-        'Meta Title': ['Meta Title 1', 'Meta Title 2'],
-        'Description of Page': ['Description 1', 'Description 2']
-    })
+    df = pd.read_csv('input.csv')
 
-    for index, row in df.iterrows():
-        generate_blog_post(row)
-        time.sleep(60)  # To prevent rate limit issues
+    with ThreadPoolExecutor(max_workers=5) as executor:
+        futures = [executor.submit(generate_blog_post, row) for index, row in df.iterrows()]
+        for future in tqdm(concurrent.futures.as_completed(futures), total=len(futures)):
+            try:
+                future.result()  # To raise exceptions if any occurred during the thread's execution
+            except Exception as e:
+                print(f"An error occurred: {e}")
 
 if __name__ == "__main__":
     main()
