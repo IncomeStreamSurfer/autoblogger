@@ -13,6 +13,8 @@ from tenacity import (
     stop_after_attempt,
     wait_random_exponential,
 )  # for exponential backoff
+from dotenv import load_dotenv
+load_dotenv()
 
 @retry(wait=wait_random_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(10))
 def completion_with_backoff(**kwargs):
@@ -29,7 +31,8 @@ def completion_with_backoff(**kwargs):
 
 
 
-openai.api_key = 'YOUR_OPEN_AI_KEY'
+openai.api_key = os.getenv('OPENAI_API_KEY')
+model_name = os.getenv('MODEL_NAME')
 
 output_df = pd.DataFrame(columns=['URL Slug', 'Meta Title', 'Description', 'Blog Content', 'Featured Image'])
 output_lock = threading.Lock()
@@ -37,7 +40,7 @@ output_lock = threading.Lock()
 # Retry on rate limit error with exponential backoff
 @retry(wait=wait_random_exponential(multiplier=1, min=4, max=10), stop=stop_after_attempt(10))
 def generate_featured_image(text, meta_title):
-    api_key = 'YOUR_STABILITY_API_KEY'
+    api_key = os.getenv('STABILITY_AI_API_KEY')
     api_host = 'https://api.stability.ai'
     engine_id = 'stable-diffusion-xl-1024-v1-0'
     response = requests.post(
@@ -92,10 +95,10 @@ def generate_blog_post(row):
             },
         ]
         response_outline = completion_with_backoff(
-    model="gpt-4",
+    model=model_name,
     messages=conversation_outline,
-    max_tokens=1024,
-    temperature=0.2
+    max_tokens = int(os.getenv('MAX_OUTLINE_TOKENS')),
+    temperature = float(os.getenv('TEMPERATURE'))
         )
         essay_outline = response_outline['choices'][0]['message']['content']
         
@@ -111,10 +114,10 @@ def generate_blog_post(row):
             },
         ]
         response = completion_with_backoff(
-    model="gpt-4",
+    model=model_name,
     messages=conversation,
-    max_tokens=4500,
-    temperature=0.2
+    max_tokens = int(os.getenv('MAX_TOKENS')),
+    temperature = float(os.getenv('TEMPERATURE'))
         )
         
         
@@ -132,12 +135,12 @@ def generate_blog_post(row):
             tqdm.write(f"Saved blog post for URL Slug {url_slug} to output.csv")
             
 
-                       # WordPress site URL
-            wp_url = 'YOUR_WP_URL'
+            # WordPress site URL          
+            wp_url = os.getenv('WP_URL')
 
             # WordPress username and password
-            username = 'your_wp_username'
-            password = 'your_wp_app_password'
+            username = os.getenv('WP_USERNAME')
+            password = os.getenv('WP_PASSWORD')
 
               # Open the image file in binary mode
             with open(result['Featured Image'], 'rb') as img:

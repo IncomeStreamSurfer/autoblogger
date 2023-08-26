@@ -5,11 +5,14 @@ import os
 import base64
 import time
 from tqdm import tqdm
+from dotenv import load_dotenv
+load_dotenv()
 
-openai.api_key = 'YOUR_OPEN_AI_KEY'  # Add your OpenAI API Key
+openai.api_key = os.getenv('OPENAI_API_KEY')
+model_name = os.getenv('MODEL_NAME')
 
 def generate_featured_image(text):
-    api_key = 'YOUR_STABILITY_API_KEY'
+    api_key = os.getenv('STABILITY_AI_API_KEY')
     api_host = 'https://api.stability.ai'
     engine_id = 'stable-diffusion-xl-beta-v2-2-2'
     response = requests.post(
@@ -85,10 +88,10 @@ for index, row in enumerate(tqdm(rows, desc='Generating blog posts')):
     ]
 
     response_outline = openai.ChatCompletion.create(
-        model="gpt-4",
+        model=model_name,
         messages=conversation_outline,
-        max_tokens=1024,
-        temperature=0.2
+        max_tokens = int(os.getenv('MAX_OUTLINE_TOKENS')),
+        temperature = float(os.getenv('TEMPERATURE'))
     )
 
     essay_outline = response_outline['choices'][0]['message']['content']
@@ -105,10 +108,10 @@ for index, row in enumerate(tqdm(rows, desc='Generating blog posts')):
 ]
 
     response = openai.ChatCompletion.create(
-        model="gpt-4",
+        model=model_name,
         messages=conversation,
-        max_tokens=6400,
-        temperature=0.2
+        max_tokens = int(os.getenv('MAX_TOKENS')),
+        temperature = float(os.getenv('TEMPERATURE'))
     )
 
 

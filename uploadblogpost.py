@@ -2,16 +2,18 @@ import pandas as pd
 import requests
 import base64
 import os
+from dotenv import load_dotenv
+load_dotenv()
 
 # Load the CSV file into a pandas dataframe
 df = pd.read_csv('output.csv')
 
-# WordPress site URL
-wp_url = 'YOUR_WEBSITE_URL'
+# WordPress site URL          
+wp_url = os.getenv('WP_URL')
 
 # WordPress username and password
-username = 'YOUR_WORDPRESS_USERNAME'
-password = 'YOUR_WP_APP_PASSWORD'
+username = os.getenv('WP_USERNAME')
+password = os.getenv('WP_PASSWORD')
 
 # Iterate through each row in the CSV file
 for index, row in df.iterrows():

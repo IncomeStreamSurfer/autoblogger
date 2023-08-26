@@ -2,10 +2,11 @@
 This is an autoblogger that uses the ChatGPT API and Stable Diffusion API to create fully optimized blog posts and post them automatically to wordpress
 
 ## First step
-
+- Install all Dependencies with pip install -r requirements.txt
 - Get your stability API key (I am using [dreamstudio]([url](https://dreamstudio.com/api/)))
-- Get your OpenAI API Key (GPT-4 is recommended, haven't tested with GPT3.5, 300-500 articles cost me about $50)
+- Get your OpenAI API Key (GPT-4 is recommended, GPT3.5 works (but you need to lower the max_tokens), 300-500 articles cost me about $50)
 - Create a WordPress App Password, get your user log-in, and your site's URL
+- Rename the provided .env.example file to .env and replace the placeholder values with your actual details.
 - A plan for your website, this way you can already internally link without worrying about doing it afterwards. If you keep a nice, uniform structure, you will be able to plan out all the content and post it all to your website without using any other internal link system.
 
 [Example Website](https://giucas.com)

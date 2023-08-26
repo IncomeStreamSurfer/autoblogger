@@ -1,0 +1,7 @@
+openai
+pandas
+requests
+tqdm
+backoff
+tenacity
+python-dotenv
