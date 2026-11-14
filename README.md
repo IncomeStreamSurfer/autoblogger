@@ -1,4 +1,7 @@
 # free autoblogger
+
+> **Free community:** the current version of this, plus my other Claude Code skills, prompts and courses, is in my free Skool community: https://www.skool.com/iss-ai-automation-school-6342/about
+
 This is an autoblogger that uses the ChatGPT API and Stable Diffusion API to create fully optimized blog posts and post them automatically to wordpress
 
 ## First step
